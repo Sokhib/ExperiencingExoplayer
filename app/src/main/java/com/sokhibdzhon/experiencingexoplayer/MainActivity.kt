@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.exoplayer2.C
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
@@ -77,6 +78,27 @@ class MainActivity : AppCompatActivity() {
                 .setTrackSelector(trackSelector)
                 .build()
         }
+        player!!.addListener(object : Player.EventListener {
+            override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+                super.onPlayerStateChanged(playWhenReady, playbackState)
+                val state = when (playbackState) {
+                    Player.STATE_BUFFERING -> {
+                        "ExoPlayer.STATE_BUFFERING"
+                    }
+                    Player.STATE_ENDED -> {
+                        "ExoPlayer.STATE_ENDED"
+                    }
+                    Player.STATE_IDLE -> {
+                        "ExoPlayer.STATE_IDLE"
+                    }
+                    Player.STATE_READY -> {
+                        "ExoPlayer.STATE_READY"
+                    }
+                    else -> "ExoPlayer.STATE_UNKNOWN"
+                }
+                Log.d("MAIN", "onPlayerStateChanged: $state playWhenReady $playWhenReady ")
+            }
+        })
 
         val uri =
             Uri.parse(getString(R.string.media_url_dota))
