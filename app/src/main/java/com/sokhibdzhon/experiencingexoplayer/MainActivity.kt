@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity() {
         private const val userAgent = "exoplayer-data-factory"
     }
 
+    private lateinit var exoListener: Player.EventListener
     private var player: SimpleExoPlayer? = null
     private var playWhenReadyFlag = true
     private var currentWindow = 0
@@ -34,6 +35,27 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        exoListener = object : Player.EventListener {
+            override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+                super.onPlayerStateChanged(playWhenReady, playbackState)
+                val state = when (playbackState) {
+                    Player.STATE_BUFFERING -> {
+                        "ExoPlayer.STATE_BUFFERING"
+                    }
+                    Player.STATE_ENDED -> {
+                        "ExoPlayer.STATE_ENDED"
+                    }
+                    Player.STATE_IDLE -> {
+                        "ExoPlayer.STATE_IDLE"
+                    }
+                    Player.STATE_READY -> {
+                        "ExoPlayer.STATE_READY"
+                    }
+                    else -> "ExoPlayer.STATE_UNKNOWN"
+                }
+                Log.d("MAIN", "onPlayerStateChanged: $state playWhenReady $playWhenReady ")
+            }
+        }
     }
 
     override fun onStart() {
@@ -78,30 +100,9 @@ class MainActivity : AppCompatActivity() {
                 .setTrackSelector(trackSelector)
                 .build()
         }
-        player!!.addListener(object : Player.EventListener {
-            override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
-                super.onPlayerStateChanged(playWhenReady, playbackState)
-                val state = when (playbackState) {
-                    Player.STATE_BUFFERING -> {
-                        "ExoPlayer.STATE_BUFFERING"
-                    }
-                    Player.STATE_ENDED -> {
-                        "ExoPlayer.STATE_ENDED"
-                    }
-                    Player.STATE_IDLE -> {
-                        "ExoPlayer.STATE_IDLE"
-                    }
-                    Player.STATE_READY -> {
-                        "ExoPlayer.STATE_READY"
-                    }
-                    else -> "ExoPlayer.STATE_UNKNOWN"
-                }
-                Log.d("MAIN", "onPlayerStateChanged: $state playWhenReady $playWhenReady ")
-            }
-        })
-
+        player!!.addListener(exoListener)
         val uri =
-            Uri.parse(getString(R.string.media_url_dota))
+            Uri.parse(getString(R.string.media_url_aegis))
         val type = Util.inferContentType(uri)
         Log.d("MAIN", "initializePlayer: $type ")
         val mediaSource = buildMediaSource(uri, type)
@@ -140,6 +141,7 @@ class MainActivity : AppCompatActivity() {
             playbackPosition = it.currentPosition
             currentWindow = it.currentWindowIndex
             it.release()
+            it.removeListener(exoListener)
             player = null
         }
 
