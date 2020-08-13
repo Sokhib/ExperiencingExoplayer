@@ -6,7 +6,6 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.source.BaseMediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
@@ -16,7 +15,7 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.activity_main.*
 
-// http://cdn.odece.xyz/1.php
+// http://cdn.odece.xyz/1.php // check this with every type...
 //https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4
 
 //TODO: set playbackPosition and currentWindow to continue on Resume. get via savedInstance?
@@ -25,10 +24,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val userAgent = "exoplayer-data-factory"
-        private const val videoURL =
-            "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-        private const val dashVideoURL =
-            "<![CDATA[https://www.youtube.com/api/manifest/dash/id/bf5bb2419360daf1/source/youtube?as=fmp4_audio_clear,fmp4_sd_hd_clear&sparams=ip,ipbits,expire,source,id,as&ip=0.0.0.0&ipbits=0&expire=19000000000&signature=51AF5F39AB0CEC3E5497CD9C900EBFEAECCCB5C7.8506521BFC350652163895D4C26DEE124209AA9E&key=ik0]]>"
     }
 
     private var player: SimpleExoPlayer? = null
@@ -85,21 +80,19 @@ class MainActivity : AppCompatActivity() {
         }
         playerView.player = player
         val uri =
-            Uri.parse(dashVideoURL)
+            Uri.parse(getString(R.string.media_url_dash))
         val type = Util.inferContentType(uri)
         Log.d("MAIN", "initializePlayer: $type ")
         val mediaSource = buildMediaSource(uri, type)
         player!!.apply {
             playWhenReady = playWhenReadyFlag
             seekTo(currentWindow, playbackPosition)
-            if (mediaSource != null) {
-                prepare(mediaSource, false, false)
-            }
+            prepare(mediaSource, false, false)
         }
 
     }
 
-    private fun buildMediaSource(uri: Uri, type: Int): BaseMediaSource? {
+    private fun buildMediaSource(uri: Uri, type: Int): DashMediaSource {
         val mediaSource = when (type) {
             C.TYPE_DASH -> DashMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
                 .createMediaSource(uri)
@@ -114,8 +107,8 @@ class MainActivity : AppCompatActivity() {
             }
 
         }
-        return mediaSource
-        //return ConcatenatingMediaSource(mediaSource, mediaSource)
+        return DashMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
+            .createMediaSource(uri)
     }
 
     private fun releasePlayer() {
