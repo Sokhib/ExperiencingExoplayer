@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.source.ConcatenatingMediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
@@ -20,7 +21,13 @@ import kotlinx.android.synthetic.main.activity_main.*
 //TODO: set playbackPosition and currentWindow to continue on Resume. get via savedInstance?
 
 class MainActivity : AppCompatActivity() {
-    private val userAgent = "exoplayer-data-factory"
+
+    companion object {
+        private const val userAgent = "exoplayer-data-factory"
+        private const val videoURL =
+            "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+    }
+
     private var player: SimpleExoPlayer? = null
     private var playWhenReadyFlag = true
     private var currentWindow = 0
@@ -63,32 +70,34 @@ class MainActivity : AppCompatActivity() {
         player = SimpleExoPlayer.Builder(this).build()
         playerView.player = player
         val uri =
-            Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4")
+            Uri.parse(videoURL)
         val type = Util.inferContentType(uri)
         Log.d("MAIN", "initializePlayer: $type ")
         val mediaSource = buildMediaSource(uri, type)
         player!!.apply {
             playWhenReady = playWhenReadyFlag
             seekTo(currentWindow, playbackPosition)
-            if (mediaSource != null) {
-                prepare(mediaSource, false, false)
-            }
+            prepare(mediaSource, false, false)
         }
 
     }
 
-    private fun buildMediaSource(uri: Uri, type: Int) = when (type) {
-        C.TYPE_DASH -> DashMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
-            .createMediaSource(uri)
-        C.TYPE_SS -> SsMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
-            .createMediaSource(uri)
-        C.TYPE_HLS -> HlsMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
-            .createMediaSource(uri)
-        C.TYPE_OTHER -> ProgressiveMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
-            .createMediaSource(uri)
-        else -> {
-            throw  IllegalStateException("Unsupported type: $type")
+    private fun buildMediaSource(uri: Uri, type: Int): ConcatenatingMediaSource {
+        val mediaSource = when (type) {
+            C.TYPE_DASH -> DashMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
+                .createMediaSource(uri)
+            C.TYPE_SS -> SsMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
+                .createMediaSource(uri)
+            C.TYPE_HLS -> HlsMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
+                .createMediaSource(uri)
+            C.TYPE_OTHER -> ProgressiveMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
+                .createMediaSource(uri)
+            else -> {
+                throw  IllegalStateException("Unsupported type: $type")
+            }
+
         }
+        return ConcatenatingMediaSource(mediaSource, mediaSource)
     }
 
     private fun releasePlayer() {
