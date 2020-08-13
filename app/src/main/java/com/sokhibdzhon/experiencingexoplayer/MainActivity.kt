@@ -6,11 +6,12 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.source.ConcatenatingMediaSource
+import com.google.android.exoplayer2.source.BaseMediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.activity_main.*
@@ -26,6 +27,8 @@ class MainActivity : AppCompatActivity() {
         private const val userAgent = "exoplayer-data-factory"
         private const val videoURL =
             "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+        private const val dashVideoURL =
+            "<![CDATA[https://www.youtube.com/api/manifest/dash/id/bf5bb2419360daf1/source/youtube?as=fmp4_audio_clear,fmp4_sd_hd_clear&sparams=ip,ipbits,expire,source,id,as&ip=0.0.0.0&ipbits=0&expire=19000000000&signature=51AF5F39AB0CEC3E5497CD9C900EBFEAECCCB5C7.8506521BFC350652163895D4C26DEE124209AA9E&key=ik0]]>"
     }
 
     private var player: SimpleExoPlayer? = null
@@ -67,22 +70,36 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun initializePlayer() {
-        player = SimpleExoPlayer.Builder(this).build()
+        if (player == null) {
+            /*
+            * which is responsible for choosing tracks in the media source.
+            * Then, tell your trackSelector to only pick tracks of standard definition
+            * or lower—a good way of saving your user's data at the expense of quality
+            * */
+            val trackSelector = DefaultTrackSelector(this)
+            trackSelector.parameters =
+                trackSelector.buildUponParameters().setMaxVideoSizeSd().build()
+            player = SimpleExoPlayer.Builder(this)
+                .setTrackSelector(trackSelector)
+                .build()
+        }
         playerView.player = player
         val uri =
-            Uri.parse(videoURL)
+            Uri.parse(dashVideoURL)
         val type = Util.inferContentType(uri)
         Log.d("MAIN", "initializePlayer: $type ")
         val mediaSource = buildMediaSource(uri, type)
         player!!.apply {
             playWhenReady = playWhenReadyFlag
             seekTo(currentWindow, playbackPosition)
-            prepare(mediaSource, false, false)
+            if (mediaSource != null) {
+                prepare(mediaSource, false, false)
+            }
         }
 
     }
 
-    private fun buildMediaSource(uri: Uri, type: Int): ConcatenatingMediaSource {
+    private fun buildMediaSource(uri: Uri, type: Int): BaseMediaSource? {
         val mediaSource = when (type) {
             C.TYPE_DASH -> DashMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
                 .createMediaSource(uri)
@@ -97,7 +114,8 @@ class MainActivity : AppCompatActivity() {
             }
 
         }
-        return ConcatenatingMediaSource(mediaSource, mediaSource)
+        return mediaSource
+        //return ConcatenatingMediaSource(mediaSource, mediaSource)
     }
 
     private fun releasePlayer() {
