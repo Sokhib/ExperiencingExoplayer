@@ -18,7 +18,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 // http://cdn.odece.xyz/1.php // check this with every type...
 //https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4
 
-//TODO: set playbackPosition and currentWindow to continue on Resume. get via savedInstance?
 
 class MainActivity : AppCompatActivity() {
 
@@ -78,21 +77,23 @@ class MainActivity : AppCompatActivity() {
                 .setTrackSelector(trackSelector)
                 .build()
         }
-        playerView.player = player
+
         val uri =
-            Uri.parse(getString(R.string.media_url_dash))
+            Uri.parse(getString(R.string.media_url_dota))
         val type = Util.inferContentType(uri)
         Log.d("MAIN", "initializePlayer: $type ")
         val mediaSource = buildMediaSource(uri, type)
         player!!.apply {
             playWhenReady = playWhenReadyFlag
             seekTo(currentWindow, playbackPosition)
-            prepare(mediaSource, false, false)
+            if (mediaSource != null) {
+                prepare(mediaSource, false, false)
+            }
         }
-
+        playerView.player = player
     }
 
-    private fun buildMediaSource(uri: Uri, type: Int): DashMediaSource {
+    private fun buildMediaSource(uri: Uri, type: Int): ProgressiveMediaSource? {
         val mediaSource = when (type) {
             C.TYPE_DASH -> DashMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
                 .createMediaSource(uri)
@@ -107,7 +108,7 @@ class MainActivity : AppCompatActivity() {
             }
 
         }
-        return DashMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
+        return ProgressiveMediaSource.Factory(DefaultHttpDataSourceFactory(userAgent))
             .createMediaSource(uri)
     }
 
