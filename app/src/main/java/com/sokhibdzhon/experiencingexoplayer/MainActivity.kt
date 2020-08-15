@@ -1,5 +1,6 @@
 package com.sokhibdzhon.experiencingexoplayer
 
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -12,6 +13,7 @@ import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import kotlinx.android.synthetic.main.activity_main.*
@@ -55,6 +57,16 @@ class MainActivity : AppCompatActivity() {
                 }
                 Log.d("MAIN", "onPlayerStateChanged: $state playWhenReady $playWhenReady ")
             }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        when (resources.configuration.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> playerView.resizeMode =
+                AspectRatioFrameLayout.RESIZE_MODE_FILL
+            else -> playerView.resizeMode =
+                AspectRatioFrameLayout.RESIZE_MODE_FIT
         }
     }
 
